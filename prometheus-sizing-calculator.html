@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prometheus Sizing Calculator for YugabyteDB Anywhere</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Customizing Tailwind with YugabyteDB's color palette
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-orange': '#ff7900',
+                        'primary-orange-darker': '#e66a00', // For hover states
+                        'grayscale-black': '#222222',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Use the Inter font family */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Simple transition for better UX */
+        .transition-all {
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-4xl">
+        
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Prometheus Sizing Calculator for YugabyteDB Anywhere</h1>
+            <p class="mt-2 text-md text-gray-600">Interactively estimate memory, disk, and CPU requirements for your YugabyteDB Anywhere Node which runs Prometheus, YB-Platform and Postgres service.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column: Input and Universe List -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Input Form Card -->
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">Add a Universe</h2>
+                    <div id="add-universe-form" class="space-y-4">
+                        <div>
+                            <label for="universe-name" class="block text-sm font-medium text-gray-700">Universe Name</label>
+                            <input type="text" id="universe-name" placeholder="e.g., YugabyteDB-Dev-Cluster" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-orange focus:border-primary-orange sm:text-sm">
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="universe-tables" class="block text-sm font-medium text-gray-700">Number of Tables</label>
+                                <input type="number" id="universe-tables" placeholder="e.g., 500" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-orange focus:border-primary-orange sm:text-sm" min="0">
+                            </div>
+                            <div>
+                                <label for="universe-nodes" class="block text-sm font-medium text-gray-700">Number of Nodes</label>
+                                <input type="number" id="universe-nodes" placeholder="e.g., 3" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-orange focus:border-primary-orange sm:text-sm" min="0">
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <button id="add-universe-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-orange hover:bg-primary-orange-darker focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-orange transition-all">
+                                Add Universe
+                            </button>
+                        </div>
+                        <div id="error-message" class="text-red-500 text-sm mt-2"></div>
+                    </div>
+                </div>
+
+                <!-- Universe List Card -->
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">Configured Universes</h2>
+                    <div id="universes-list" class="space-y-3">
+                        <p id="empty-state" class="text-center text-gray-500 py-4">No universes added yet. Use the form above to get started.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Column: Summary -->
+            <div class="lg:col-span-1">
+                <div class="bg-grayscale-black text-white p-6 rounded-xl shadow-lg sticky top-8">
+                    <h2 class="text-xl font-semibold mb-4 text-center border-b border-primary-orange/30 pb-3">Estimated Requirements</h2>
+                    
+                    <div class="text-center mb-6">
+                        <p class="text-sm text-gray-400 uppercase tracking-wider">Total Metrics</p>
+                        <!-- UI FIX: Use break-all and responsive font size -->
+                        <p id="total-metrics" class="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary-orange break-all">0</p>
+                    </div>
+
+                    <div class="space-y-5">
+                        <div class="flex items-center justify-between p-4 bg-white/10 rounded-lg">
+                            <div>
+                                <p class="text-sm text-gray-300">Memory</p>
+                                <!-- UI FIX: Use break-all and responsive font size -->
+                                <p id="memory-gb" class="text-xl sm:text-2xl font-semibold break-all">0.00 GB</p>
+                            </div>
+                            <!-- New Memory (RAM) Icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="8" width="18" height="8" rx="1" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 8V6h2v2m4-2h2v2h-2m4 0h2v2h-2M7 16v2h2v-2m4 2h2v-2h-2m4 0h2v-2h-2" />
+                            </svg>
+                        </div>
+                        <div class="flex items-center justify-between p-4 bg-white/10 rounded-lg">
+                            <div>
+                                <p class="text-sm text-gray-300">Disk</p>
+                                <!-- UI FIX: Use break-all and responsive font size -->
+                                <p id="disk-gb" class="text-xl sm:text-2xl font-semibold break-all">0.00 GB</p>
+                            </div>
+                           <!-- New Disk (HDD) Icon -->
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <rect x="5" y="4" width="14" height="16" rx="2" />
+                                <circle cx="12" cy="12" r="3" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3l2 1" />
+                            </svg>
+                        </div>
+                        <div class="flex items-center justify-between p-4 bg-white/10 rounded-lg">
+                            <div>
+                                <p class="text-sm text-gray-300">CPU</p>
+                                <!-- UI FIX: Use break-all and responsive font size -->
+                                <p id="cpu-cores" class="text-xl sm:text-2xl font-semibold break-all">0.00 Cores</p>
+                            </div>
+                            <!-- New CPU Icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                               <rect x="5" y="5" width="14" height="14" rx="1" />
+                               <rect x="9" y="9" width="6" height="6" rx="1" />
+                               <path stroke-linecap="round" stroke-linejoin="round" d="M5 9H3m2 6H3m14-6h2m-2 6h2M9 5V3m6 2V3m-6 16v2m6-2v2"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Element References ---
+        const addUniverseBtn = document.getElementById('add-universe-btn');
+        const nameInput = document.getElementById('universe-name');
+        const tablesInput = document.getElementById('universe-tables');
+        const nodesInput = document.getElementById('universe-nodes');
+        const universesList = document.getElementById('universes-list');
+        const emptyState = document.getElementById('empty-state');
+        const errorMessage = document.getElementById('error-message');
+
+        const totalMetricsEl = document.getElementById('total-metrics');
+        const memoryGbEl = document.getElementById('memory-gb');
+        const diskGbEl = document.getElementById('disk-gb');
+        const cpuCoresEl = document.getElementById('cpu-cores');
+
+        // --- State Management ---
+        let universes = [];
+
+        // --- Core Logic ---
+
+        /**
+         * Calculates metrics for a single universe based on tables and nodes.
+         * @param {number} tables - The number of tables.
+         * @param {number} nodes - The number of nodes.
+         * @returns {number} The calculated metrics for the universe.
+         */
+        function calculateUniverseMetrics(tables, nodes) {
+            // Use BigInt for calculations to prevent precision loss with extremely large numbers
+            return (BigInt(60) * BigInt(tables) + BigInt(9000)) * BigInt(nodes);
+        }
+
+        /**
+         * Formats a potentially very large number for display.
+         * Uses scientific notation if the number is too large.
+         * @param {number | bigint} num - The number to format.
+         * @param {number} threshold - The number above which to use scientific notation.
+         * @returns {string} The formatted number string.
+         */
+        function formatLargeNumber(num, threshold = 1e15) {
+            const numAsNumber = Number(num);
+            if (numAsNumber > threshold) {
+                return numAsNumber.toExponential(2);
+            }
+            return numAsNumber.toLocaleString(undefined, { maximumFractionDigits: 2 });
+        }
+
+        /**
+         * Recalculates the total requirements based on the current list of universes.
+         */
+        function calculateTotalRequirements() {
+            // 1. Calculate total metrics from all universes
+            const total_metrics = universes.reduce((sum, u) => sum + u.metrics, BigInt(0));
+
+            // 2. Determine memory per metric based on the total
+            const memory_per_metric = (total_metrics > 1000000) ? BigInt(10) : BigInt(30);
+
+            // 3. Calculate final requirements
+            const memory_kb = total_metrics * memory_per_metric;
+            const memory_gb = Number(memory_kb) / 1024 / 1024;
+
+            const disk_kb = total_metrics * BigInt(253);
+            const disk_gb = Number(disk_kb) / 1024 / 1024;
+
+            const cpu = Number(total_metrics) / 1000000;
+
+            // 4. Update the UI with the new values
+            totalMetricsEl.textContent = formatLargeNumber(total_metrics);
+            memoryGbEl.textContent = `${formatLargeNumber(memory_gb, 1e6)} GB`;
+            diskGbEl.textContent = `${formatLargeNumber(disk_gb, 1e6)} GB`;
+            cpuCoresEl.textContent = `${formatLargeNumber(cpu, 1e6)} Cores`;
+        }
+
+        /**
+         * Renders the list of universes in the DOM.
+         */
+        function renderUniverses() {
+            // Clear the current list
+            universesList.innerHTML = '';
+
+            if (universes.length === 0) {
+                // Show the empty state message if no universes are present
+                universesList.appendChild(emptyState);
+            } else {
+                // Create and append an element for each universe
+                universes.forEach((universe, index) => {
+                    const universeEl = document.createElement('div');
+                    universeEl.className = 'flex items-center justify-between bg-gray-100 p-3 rounded-lg border border-gray-200';
+                    universeEl.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-gray-800">${universe.name}</p>
+                            <p class="text-sm text-gray-600">
+                                Tables: ${Number(universe.tables).toLocaleString()} | Nodes: ${Number(universe.nodes).toLocaleString()} → Metrics: <span class="font-medium">${Number(universe.metrics).toLocaleString()}</span>
+                            </p>
+                        </div>
+                        <button data-index="${index}" class="remove-btn text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    `;
+                    universesList.appendChild(universeEl);
+                });
+            }
+        }
+
+        /**
+         * Handles adding a new universe.
+         */
+        function handleAddUniverse() {
+            // Clear previous errors
+            errorMessage.textContent = '';
+
+            // Get and validate input
+            const name = nameInput.value.trim();
+            const tables = parseInt(tablesInput.value, 10);
+            const nodes = parseInt(nodesInput.value, 10);
+
+            if (!name || isNaN(tables) || isNaN(nodes) || tables < 0 || nodes < 0) {
+                errorMessage.textContent = 'Please fill in all fields with valid, non-negative numbers.';
+                return;
+            }
+
+            // Calculate metrics for the new universe
+            const metrics = calculateUniverseMetrics(tables, nodes);
+
+            // Add to the state
+            universes.push({ name, tables, nodes, metrics });
+
+            // Update the entire application
+            renderUniverses();
+            calculateTotalRequirements();
+
+            // Clear input fields
+            nameInput.value = '';
+            tablesInput.value = '';
+            nodesInput.value = '';
+            nameInput.focus();
+        }
+
+        /**
+         * Handles removing a universe.
+         * @param {Event} e - The click event.
+         */
+        function handleRemoveUniverse(e) {
+            const removeBtn = e.target.closest('.remove-btn');
+            if (removeBtn) {
+                const index = parseInt(removeBtn.dataset.index, 10);
+                // Remove the universe from the array
+                universes.splice(index, 1);
+                
+                // Update the entire application
+                renderUniverses();
+                calculateTotalRequirements();
+            }
+        }
+
+        // --- Event Listeners ---
+        addUniverseBtn.addEventListener('click', handleAddUniverse);
+        universesList.addEventListener('click', handleRemoveUniverse);
+        
+        // Allow pressing Enter in input fields to add a universe
+        nameInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleAddUniverse());
+        tablesInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleAddUniverse());
+        nodesInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleAddUniverse());
+
+        // --- Initial Load ---
+        // Initial render to show the empty state
+        renderUniverses();
+    </script>
+
+</body>
+</html>
