@@ -141,6 +141,64 @@
                 </div>
             </div>
         </div>
+
+        <!-- Calculation Logic Section -->
+        <div class="mt-8">
+            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Calculation Logic</h2>
+                <div class="space-y-6 text-gray-700">
+                    
+                    <!-- Total Metrics Logic -->
+                    <div>
+                        <h3 class="font-semibold text-primary-orange">Total Metrics</h3>
+                        <p class="text-sm text-gray-600 mt-1 mb-2">The metrics for a single universe are calculated as:</p>
+                        <div class="bg-gray-50 border-l-4 border-primary-orange p-4 rounded-md">
+                            <code class="block w-full bg-transparent text-gray-800 text-sm font-mono">Universe Metrics = (60 * Tables + 9000) * Nodes</code>
+                        </div>
+                    </div>
+
+                    <!-- Memory Logic -->
+                    <div>
+                        <h3 class="font-semibold text-primary-orange">Memory (GB)</h3>
+                        <p class="text-sm text-gray-600 mt-1 mb-2">Memory per metric varies based on the total volume:</p>
+                        <div class="space-y-2">
+                             <div class="bg-gray-50 border-l-4 border-primary-orange p-4 rounded-md">
+                                 <p class="text-xs text-gray-500 font-medium">For totals **1,000,000 or less** (30 KB/metric):</p>
+                                 <code class="block w-full bg-transparent text-gray-800 text-sm font-mono mt-1">Memory (GB) = (Total Metrics * 30) / 1024 / 1024</code>
+                             </div>
+                             <div class="bg-gray-50 border-l-4 border-primary-orange p-4 rounded-md">
+                                 <p class="text-xs text-gray-500 font-medium">For totals **over 1,000,000** (10 KB/metric):</p>
+                                 <code class="block w-full bg-transparent text-gray-800 text-sm font-mono mt-1">Memory (GB) = (Total Metrics * 10) / 1024 / 1024</code>
+                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Disk Logic -->
+                    <div>
+                        <h3 class="font-semibold text-primary-orange">Disk (GB)</h3>
+                        <p class="text-sm text-gray-600 mt-1 mb-2">Disk usage is estimated at 253 KB per metric:</p>
+                        <div class="bg-gray-50 border-l-4 border-primary-orange p-4 rounded-md">
+                            <code class="block w-full bg-transparent text-gray-800 text-sm font-mono">Disk (GB) = (Total Metrics * 253) / 1024 / 1024</code>
+                        </div>
+                    </div>
+                    
+                    <!-- CPU Logic -->
+                    <div>
+                        <h3 class="font-semibold text-primary-orange">CPU (Cores)</h3>
+                        <p class="text-sm text-gray-600 mt-1 mb-2">CPU is estimated at 1 core per 1,000,000 metrics:</p>
+                        <div class="bg-gray-50 border-l-4 border-primary-orange p-4 rounded-md">
+                            <code class="block w-full bg-transparent text-gray-800 text-sm font-mono">CPU Cores = Total Metrics / 1,000,000</code>
+                        </div>
+                    </div>
+
+                    <!-- Note -->
+                    <div class="pt-4 border-t border-gray-200">
+                        <p class="text-sm text-gray-500"><strong>Note:</strong> These calculations are estimates based on a standard Prometheus configuration with a 10-second scrape interval and a 15-day data retention period. Actual resource usage may vary.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
