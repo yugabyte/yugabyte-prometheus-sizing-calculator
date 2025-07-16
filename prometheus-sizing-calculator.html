@@ -68,12 +68,28 @@
                                 <input type="number" id="universe-nodes" placeholder="e.g., 3" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-orange focus:border-primary-orange sm:text-sm" min="0">
                             </div>
                         </div>
+
                         <div class="flex justify-end">
                             <button id="add-universe-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-orange hover:bg-primary-orange-darker focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-orange transition-all">
                                 Add Universe
                             </button>
                         </div>
                         <div id="error-message" class="text-red-500 text-sm mt-2"></div>
+                    </div>
+                </div>
+
+                <!-- Live Formula Breakdown -->
+                <div id="live-formula-view" class="hidden bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                    <h2 id="live-universe-name" class="text-xl font-bold text-primary-orange mb-4">Universe Name</h2>
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <p class="font-semibold text-gray-800">Total Metrics</p>
+                            <p id="live-metrics-formula" class="font-mono text-gray-600 bg-gray-50 p-2 rounded-md mt-1 break-all"></p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800">Memory</p>
+                            <p id="live-memory-formula" class="font-mono text-gray-600 bg-gray-50 p-2 rounded-md mt-1 break-all"></p>
+                        </div>
                     </div>
                 </div>
 
@@ -94,7 +110,6 @@
                     
                     <div class="text-center mb-6">
                         <p class="text-sm text-gray-400 uppercase tracking-wider">Total Metrics</p>
-                        <!-- UI FIX: Use break-all and responsive font size -->
                         <p id="total-metrics" class="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary-orange break-all">0</p>
                     </div>
 
@@ -102,10 +117,8 @@
                         <div class="flex items-center justify-between p-4 bg-white/10 rounded-lg">
                             <div>
                                 <p class="text-sm text-gray-300">Memory</p>
-                                <!-- UI FIX: Use break-all and responsive font size -->
                                 <p id="memory-gb" class="text-xl sm:text-2xl font-semibold break-all">0.00 GB</p>
                             </div>
-                            <!-- New Memory (RAM) Icon -->
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <rect x="3" y="8" width="18" height="8" rx="1" />
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M7 8V6h2v2m4-2h2v2h-2m4 0h2v2h-2M7 16v2h2v-2m4 2h2v-2h-2m4 0h2v-2h-2" />
@@ -114,10 +127,8 @@
                         <div class="flex items-center justify-between p-4 bg-white/10 rounded-lg">
                             <div>
                                 <p class="text-sm text-gray-300">Disk</p>
-                                <!-- UI FIX: Use break-all and responsive font size -->
                                 <p id="disk-gb" class="text-xl sm:text-2xl font-semibold break-all">0.00 GB</p>
                             </div>
-                           <!-- New Disk (HDD) Icon -->
                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <rect x="5" y="4" width="14" height="16" rx="2" />
                                 <circle cx="12" cy="12" r="3" />
@@ -127,10 +138,8 @@
                         <div class="flex items-center justify-between p-4 bg-white/10 rounded-lg">
                             <div>
                                 <p class="text-sm text-gray-300">CPU</p>
-                                <!-- UI FIX: Use break-all and responsive font size -->
                                 <p id="cpu-cores" class="text-xl sm:text-2xl font-semibold break-all">0.00 Cores</p>
                             </div>
-                            <!-- New CPU Icon -->
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                <rect x="5" y="5" width="14" height="14" rx="1" />
                                <rect x="9" y="9" width="6" height="6" rx="1" />
@@ -216,6 +225,12 @@
         const diskGbEl = document.getElementById('disk-gb');
         const cpuCoresEl = document.getElementById('cpu-cores');
 
+        // Live Formula View Elements
+        const liveFormulaViewEl = document.getElementById('live-formula-view');
+        const liveUniverseNameEl = document.getElementById('live-universe-name');
+        const liveMetricsFormulaEl = document.getElementById('live-metrics-formula');
+        const liveMemoryFormulaEl = document.getElementById('live-memory-formula');
+
         // --- State Management ---
         let universes = [];
 
@@ -225,16 +240,14 @@
          * Calculates metrics for a single universe based on tables and nodes.
          * @param {number} tables - The number of tables.
          * @param {number} nodes - The number of nodes.
-         * @returns {number} The calculated metrics for the universe.
+         * @returns {bigint} The calculated metrics for the universe.
          */
         function calculateUniverseMetrics(tables, nodes) {
-            // Use BigInt for calculations to prevent precision loss with extremely large numbers
             return (BigInt(60) * BigInt(tables) + BigInt(9000)) * BigInt(nodes);
         }
 
         /**
          * Formats a potentially very large number for display.
-         * Uses scientific notation if the number is too large.
          * @param {number | bigint} num - The number to format.
          * @param {number} threshold - The number above which to use scientific notation.
          * @returns {string} The formatted number string.
@@ -246,18 +259,14 @@
             }
             return numAsNumber.toLocaleString(undefined, { maximumFractionDigits: 2 });
         }
-
+        
         /**
          * Recalculates the total requirements based on the current list of universes.
          */
         function calculateTotalRequirements() {
-            // 1. Calculate total metrics from all universes
             const total_metrics = universes.reduce((sum, u) => sum + u.metrics, BigInt(0));
-
-            // 2. Determine memory per metric based on the total
+            
             const memory_per_metric = (total_metrics > 1000000) ? BigInt(10) : BigInt(30);
-
-            // 3. Calculate final requirements
             const memory_kb = total_metrics * memory_per_metric;
             const memory_gb = Number(memory_kb) / 1024 / 1024;
 
@@ -266,7 +275,6 @@
 
             const cpu = Number(total_metrics) / 1000000;
 
-            // 4. Update the UI with the new values
             totalMetricsEl.textContent = formatLargeNumber(total_metrics);
             memoryGbEl.textContent = `${formatLargeNumber(memory_gb, 1e6)} GB`;
             diskGbEl.textContent = `${formatLargeNumber(disk_gb, 1e6)} GB`;
@@ -274,17 +282,38 @@
         }
 
         /**
+         * Updates the live formula view based on current input values.
+         */
+        function updateLiveFormulaView() {
+            const name = nameInput.value.trim();
+            const tables = parseInt(tablesInput.value, 10);
+            const nodes = parseInt(nodesInput.value, 10);
+
+            if (isNaN(tables) || isNaN(nodes) || tables < 0 || nodes < 0) {
+                liveFormulaViewEl.classList.add('hidden');
+                return;
+            }
+            
+            liveFormulaViewEl.classList.remove('hidden');
+            liveUniverseNameEl.textContent = name || "Live Breakdown";
+
+            const live_metrics = calculateUniverseMetrics(tables, nodes);
+            const memory_per_metric = (live_metrics > 1000000) ? BigInt(10) : BigInt(30);
+            const memory_kb = live_metrics * memory_per_metric;
+            const memory_gb = Number(memory_kb) / 1024 / 1024;
+
+            liveMetricsFormulaEl.textContent = `(60 * ${tables.toLocaleString()} Tables + 9000) * ${nodes.toLocaleString()} Nodes = ${formatLargeNumber(live_metrics)} metrics`;
+            liveMemoryFormulaEl.textContent = `(${formatLargeNumber(live_metrics)} metrics * ${memory_per_metric} bytes/metric) / 1024^2 = ${formatLargeNumber(memory_gb)} GB`;
+        }
+
+        /**
          * Renders the list of universes in the DOM.
          */
         function renderUniverses() {
-            // Clear the current list
             universesList.innerHTML = '';
-
             if (universes.length === 0) {
-                // Show the empty state message if no universes are present
                 universesList.appendChild(emptyState);
             } else {
-                // Create and append an element for each universe
                 universes.forEach((universe, index) => {
                     const universeEl = document.createElement('div');
                     universeEl.className = 'flex items-center justify-between bg-gray-100 p-3 rounded-lg border border-gray-200';
@@ -310,10 +339,7 @@
          * Handles adding a new universe.
          */
         function handleAddUniverse() {
-            // Clear previous errors
             errorMessage.textContent = '';
-
-            // Get and validate input
             const name = nameInput.value.trim();
             const tables = parseInt(tablesInput.value, 10);
             const nodes = parseInt(nodesInput.value, 10);
@@ -323,35 +349,27 @@
                 return;
             }
 
-            // Calculate metrics for the new universe
             const metrics = calculateUniverseMetrics(tables, nodes);
-
-            // Add to the state
             universes.push({ name, tables, nodes, metrics });
 
-            // Update the entire application
             renderUniverses();
             calculateTotalRequirements();
 
-            // Clear input fields
             nameInput.value = '';
             tablesInput.value = '';
             nodesInput.value = '';
+            liveFormulaViewEl.classList.add('hidden');
             nameInput.focus();
         }
 
         /**
          * Handles removing a universe.
-         * @param {Event} e - The click event.
          */
         function handleRemoveUniverse(e) {
             const removeBtn = e.target.closest('.remove-btn');
             if (removeBtn) {
                 const index = parseInt(removeBtn.dataset.index, 10);
-                // Remove the universe from the array
                 universes.splice(index, 1);
-                
-                // Update the entire application
                 renderUniverses();
                 calculateTotalRequirements();
             }
@@ -361,14 +379,18 @@
         addUniverseBtn.addEventListener('click', handleAddUniverse);
         universesList.addEventListener('click', handleRemoveUniverse);
         
-        // Allow pressing Enter in input fields to add a universe
+        // Live formula view listeners
+        nameInput.addEventListener('input', updateLiveFormulaView);
+        tablesInput.addEventListener('input', updateLiveFormulaView);
+        nodesInput.addEventListener('input', updateLiveFormulaView);
+        
         nameInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleAddUniverse());
         tablesInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleAddUniverse());
         nodesInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleAddUniverse());
 
         // --- Initial Load ---
-        // Initial render to show the empty state
         renderUniverses();
+        calculateTotalRequirements();
     </script>
 
 </body>
