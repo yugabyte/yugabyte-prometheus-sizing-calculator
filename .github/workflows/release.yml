@@ -67,4 +67,6 @@ jobs:
           files: |
             prometheus-tools.zip
             prometheus-tools.tar.gz
+          draft: false
+          prerelease: false
 
