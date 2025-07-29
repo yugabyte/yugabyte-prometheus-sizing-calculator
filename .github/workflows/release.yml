@@ -56,8 +56,8 @@ jobs:
 
       - name: Archive release files
         run: |
-          zip prometheus-tools.zip prometheus-sizing-calculator.html prometheus-sizing-calculator.sh
-          tar -czvf prometheus-tools.tar.gz prometheus-sizing-calculator.html prometheus-sizing-calculator.sh
+          zip prometheus-sizing-calculator.zip prometheus-sizing-calculator.html prometheus-sizing-calculator.sh
+          tar -czvf prometheus-sizing-calculator.tar.gz prometheus-sizing-calculator.html prometheus-sizing-calculator.sh
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -65,8 +65,8 @@ jobs:
           # This will create a release with the tag name (e.g., v1.0.1)
           # It will automatically generate release notes based on your commits.
           files: |
-            prometheus-tools.zip
-            prometheus-tools.tar.gz
+            prometheus-sizing-calculator.zip
+            prometheus-sizing-calculator.tar.gz
           draft: false
           prerelease: false
 
