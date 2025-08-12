@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# This script calculates Prometheus resource estimates based on a consistent, true aggregate model.
-# It sums all tables and nodes first before applying the formula.
+# This script calculates Prometheus resource estimates by processing each universe individually.
 #
 # Usage:
 #   Provide one or more universes using the -u flag.
@@ -95,8 +94,7 @@ fi
 
 # --- Initialization ---
 declare -a universes
-total_tables=0
-total_nodes=0
+total_metrics=0
 
 # --- Argument Parsing ---
 while getopts ":u:" opt; do
@@ -124,18 +122,17 @@ for entry in "${universes[@]}"; do
     usage
   fi
 
-  # Sum the total tables and nodes from all universes
-  total_tables=$(( total_tables + tables ))
-  total_nodes=$(( total_nodes + nodes ))
+  # Calculate metrics for this specific universe
+  universe_metrics=$(( (60 * tables + 9000) * nodes ))
 
-  bold_echo "  - Universe: $name - Tables: $tables, Nodes: $nodes"
+  # Add this universe's metrics to the grand total
+  total_metrics=$(( total_metrics + universe_metrics ))
+
+  bold_echo "  - Universe: $name - Tables: $tables, Nodes: $nodes → Metrics: $universe_metrics"
 done
 
 # --- Calculation ---
-# Apply the main formula ONCE to the aggregated sums
-total_metrics=$(( (60 * total_tables + 9000) * total_nodes ))
-
-# Determine memory factor
+# Determine memory factor based on the final total
 if [ "$total_metrics" -gt 1000000 ]; then
   memory_per_metric=10
 else
@@ -153,7 +150,6 @@ cpu=$(echo "scale=2; $total_metrics / 1000000" | bc)
 
 # --- Output ---
 echo ""
-echo -n "Total Tables: "; bold_echo -n "$total_tables"; echo -n " | Total Nodes: "; bold_echo -n "$total_nodes"; echo
 echo -n "Total Metrics: "; bold_echo "$total_metrics"
 echo ""
 echo "Estimated Requirements:"
