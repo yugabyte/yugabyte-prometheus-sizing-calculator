@@ -22,19 +22,23 @@ If you prefer to use a script, Yugabyte Support Team also provides a command-lin
 ```
 Usage: prometheus-sizing-calculator.sh -u 'name1:tables1:nodes1' -u 'name2:tables2:nodes2' ...
 
-bash prometheus-sizing-calculator.sh -u 'Yugabyte-Dev-Cluster:1000:3' -u 'prod:500:6'
+bash prometheus-sizing-calculator.sh -u 'Test1:828:6' -u 'test2:2932:6' -u 'test3:2246:3' -u 'test4:134:5'
 Sample Output
 
 Processing Universes...
-  - Universe: Yugabyte-Dev-Cluster - Tables: 1000, Nodes: 3 → Metrics: 207000
-  - Universe: prod - Tables: 500, Nodes: 6 → Metrics: 234000
+  - Universe: Test1 - Tables: 828, Nodes: 6 → Metrics: 352080
+  - Universe: test2 - Tables: 2932, Nodes: 6 → Metrics: 1109520
+  - Universe: test3 - Tables: 2246, Nodes: 3 → Metrics: 431280
+  - Universe: test4 - Tables: 134, Nodes: 5 → Metrics: 85200
 
-Total Metrics: 441000
+Total Tables: 6140 | Total Nodes: 20
+Total Metrics: 1978080
 
-Estimated Requirements:
-  Memory: 12.61 GB
-  Disk:   106.40 GB
-  CPU:    .44 cores
+* Estimated Requirements:
+
+  Memory: 18.86 GB
+  Disk:   477.27 GB
+  CPU:    1.97 cores
 ```
 
 ### Metrics Calculation Logic

@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# This script calculates Prometheus resource estimates based on a consistent, true aggregate model.
-# It sums all tables and nodes first before applying the formula.
+# This script calculates Prometheus resource estimates by processing each universe individually.
 #
 # Usage:
 #   Provide one or more universes using the -u flag.
@@ -31,7 +30,7 @@ echo ""
 echo "- This script interactively estimates memory, disk, and CPU requirements for your YugabyteDB Anywhere node running Prometheus, YB-Platform, and Postgres services."
 echo -n "- For more information, visit: "
 bold_echo "https://support.yugabyte.com/hc/en-us/articles/38092646336909-How-to-Estimate-Prometheus-Resource-Requirements-for-YugabyteDB-Anywhere"
-bold_echo -n "- GitHub"; echo ": https://github.com/yugabyte/yugabyte-prometheus-sizing"
+bold_echo -n "- GitHub"; echo ": https://github.com/yugabyte/yugabyte-prometheus-sizing-calculator"
 
 # --- Help ---
 usage() {
@@ -95,6 +94,7 @@ fi
 
 # --- Initialization ---
 declare -a universes
+total_metrics=0
 total_tables=0
 total_nodes=0
 
@@ -124,18 +124,21 @@ for entry in "${universes[@]}"; do
     usage
   fi
 
-  # Sum the total tables and nodes from all universes
+  # Calculate metrics for this specific universe
+  universe_metrics=$(( (60 * tables + 9000) * nodes ))
+
+  # Add this universe's metrics to the grand total
+  total_metrics=$(( total_metrics + universe_metrics ))
+
+  # Add to the table and node counters
   total_tables=$(( total_tables + tables ))
   total_nodes=$(( total_nodes + nodes ))
 
-  bold_echo "  - Universe: $name - Tables: $tables, Nodes: $nodes"
+  bold_echo "  - Universe: $name - Tables: $tables, Nodes: $nodes → Metrics: $universe_metrics"
 done
 
 # --- Calculation ---
-# Apply the main formula ONCE to the aggregated sums
-total_metrics=$(( (60 * total_tables + 9000) * total_nodes ))
-
-# Determine memory factor
+# Determine memory factor based on the final total
 if [ "$total_metrics" -gt 1000000 ]; then
   memory_per_metric=10
 else
@@ -156,7 +159,8 @@ echo ""
 echo -n "Total Tables: "; bold_echo -n "$total_tables"; echo -n " | Total Nodes: "; bold_echo -n "$total_nodes"; echo
 echo -n "Total Metrics: "; bold_echo "$total_metrics"
 echo ""
-echo "Estimated Requirements:"
+bold_echo "* Estimated Requirements:"
+echo ""
 echo -n "  Memory: "; bold_echo "$memory_gb GB"
 echo -n "  Disk:   "; bold_echo "$disk_gb GB"
 echo -n "  CPU:    "; bold_echo "$cpu cores"
