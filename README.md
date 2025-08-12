@@ -5,6 +5,38 @@
 
 **NOTE**: This only estimates the prometheus instance size i.e how much resource needed for Prometheus service to operate. YBA combines 2 more service yb-platform and postgres which also needs resource. So always add 3GiB to 4GiB buffer on top of what you get from this calculator to run YBA smoothly.
 
+### How to Use the Calculator
+
+For each YugabyteDB universe you plan to monitor, enter its Name, total Number of Tables, and total Number of Nodes (T-Servers).
+Click Add Universe.
+Repeat for all universes managed by this YBA instance. The Estimated Requirements will update automatically. See following demo (available on [YouTube](https://youtu.be/84Rr90qGiEc) as well). 
+
+
+![promca](https://github.com/user-attachments/assets/f8ebb7ce-ddbf-4226-82dd-ccbc5888755d)
+
+#### Use the Script-Based Calculator
+If you prefer to use a script, Yugabyte Support Team also provides a command-line calculator. You can just download latest GitHub release and run on your local machine. 
+
+- ##### Example Command
+
+```
+Usage: prometheus-sizing-calculator.sh -u 'name1:tables1:nodes1' -u 'name2:tables2:nodes2' ...
+
+bash prometheus-sizing-calculator.sh -u 'Yugabyte-Dev-Cluster:1000:3' -u 'prod:500:6'
+Sample Output
+
+Processing Universes...
+  - Universe: Yugabyte-Dev-Cluster - Tables: 1000, Nodes: 3 → Metrics: 207000
+  - Universe: prod - Tables: 500, Nodes: 6 → Metrics: 234000
+
+Total Metrics: 441000
+
+Estimated Requirements:
+  Memory: 12.61 GB
+  Disk:   106.40 GB
+  CPU:    .44 cores
+```
+
 ### Metrics Calculation Logic
 
 #### 1. Total Metrics
