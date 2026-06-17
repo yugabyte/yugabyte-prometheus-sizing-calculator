@@ -1,9 +1,9 @@
 #### Prometheus Sizing Calculator for YugabyteDB Anywhere
-##### Acess Web UI at : https://yugabyte.github.io/yugabyte-prometheus-sizing-calculator/
-- Quickly estimate the memory, disk, and CPU requirements for your YugabyteDB Anywhere node running Prometheus, YB Platform and Postgres service.
+##### Access Web UI at : https://yugabyte.github.io/yugabyte-prometheus-sizing-calculator/
+- Quickly estimate the memory, disk, and CPU requirements for your YugabyteDB Anywhere node running Prometheus, YB Platform and Postgres services.
 - For more information, visit: [YugabyteDB Knowledge Base Article](https://support.yugabyte.com/hc/en-us/articles/38092646336909-How-to-Estimate-Prometheus-Resource-Requirements-for-YugabyteDB-Anywhere)
 
-**NOTE**: This only estimates the prometheus instance size i.e how much resource needed for Prometheus service to operate. YBA combines 2 more service yb-platform and postgres which also needs resource. So always add 3GiB to 4GiB buffer on top of what you get from this calculator to run YBA smoothly.
+**NOTE**: This only estimates the prometheus instance size i.e. how much resource is needed for the Prometheus service to operate. YBA combines 2 more services, yb-platform and postgres, which also need resources. So always add a 3GiB to 4GiB buffer on top of what you get from this calculator to run YBA smoothly.
 
 ### How to Use the Calculator
 
@@ -95,7 +95,7 @@ Disk (GB) = (Total Metrics × 253) / 1024 / 1024
 
 **Example:**
 Disk (GB) = (87,000 × 253) / 1024 / 1024  
-Disk (GB) = 22,011,000 / 1,048,576 ≈ **21.00 GB**
+Disk (GB) = 22,011,000 / 1,048,576 ≈ **20.99 GB**
 
 ---
 
@@ -108,7 +108,7 @@ CPU Cores = Total Metrics / 1,000,000
 ```
 
 **Example:**
-CPU Cores = 87,000 / 1,000,000 = **0.087 cores** (~9% of a CPU core)
+CPU Cores = 87,000 / 1,000,000 = **0.087 cores** (~8.7% of a CPU core)
 
 ---
 

@@ -47,14 +47,14 @@
         <header class="text-center mb-8">
             <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Prometheus Sizing Calculator for YugabyteDB Anywhere</h1>
             <p class="mt-2 text-md text-gray-600">Interactively estimate memory, disk, and CPU requirements for your YugabyteDB Anywhere Node which runs Prometheus, YB-Platform and Postgres service.</p>
-            <p class="mt-1 text-sm text-gray-500">For more information, visit: <a href="https://support.yugabyte.com/hc/en-us/articles/38092646336909-How-to-Estimate-Prometheus-Resource-Requirements-for-YugabyteDB-Anywhere" class="text-primary-orange hover:underline">Support Article</a></p>
+            <p class="mt-1 text-sm text-gray-500">For more information, visit: <a href="https://support.yugabyte.com/hc/en-us/articles/38092646336909-How-to-Estimate-Prometheus-Resource-Requirements-for-YugabyteDB-Anywhere" class="text-primary-orange hover:underline">YugabyteDB Knowledge Base Article</a></p>
             <p class="mt-1 text-sm text-gray-500">
-              <a href="https://github.com/yugabyte/prometheus-sizing-calculator" class="inline-flex items-center text-primary-orange hover:underline">
+              <a href="https://github.com/yugabyte/yugabyte-prometheus-sizing-calculator" class="inline-flex items-center text-primary-orange hover:underline">
                 <!-- GitHub SVG Icon -->
                 <svg class="w-4 h-4 mr-1 inline-block" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M12 0C5.37 0 0 5.373 0 12c0 5.303 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.726-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.729.083-.729 1.205.085 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.304-5.466-1.334-5.466-5.931 0-1.31.468-2.381 1.236-3.221-.124-.303-.535-1.523.117-3.176 0 0 1.008-.322 3.3 1.23a11.52 11.52 0 013.003-.404c1.02.005 2.047.138 3.003.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.119 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.803 5.625-5.475 5.921.43.372.823 1.104.823 2.227 0 1.607-.015 2.903-.015 3.297 0 .321.218.694.825.576C20.565 21.796 24 17.299 24 12c0-6.627-5.373-12-12-12z"/>
                 </svg>
-                yugabyte/prometheus-sizing-calculator
+                https://github.com/yugabyte/yugabyte-prometheus-sizing-calculator
               </a>
             </p>
         </header>
@@ -94,12 +94,11 @@
 
                 <!-- Live Formula Breakdown -->
                 <div id="live-formula-view" class="hidden bg-white p-6 rounded-xl shadow-md border border-gray-200">
-                    <h2 id="live-universe-name" class="text-xl font-bold text-primary-orange mb-4">Live Breakdown</h2>
+                    <h2 id="live-universe-name" class="text-xl font-bold text-primary-orange mb-4">Live Preview</h2>
                     <div class="space-y-4 text-sm">
                         <div>
-                            <p class="font-semibold text-gray-800">Isolated Estimate for this Universe</p>
+                            <p class="font-semibold text-gray-800">Metrics from this Universe</p>
                             <p id="live-metrics-formula" class="font-mono text-gray-600 bg-gray-50 p-2 rounded-md mt-1 break-all"></p>
-                            <p class="text-xs text-gray-500 mt-2">Note: This is a preview for this universe alone. The final total on the right uses a combined calculation for higher accuracy.</p>
                         </div>
                     </div>
                 </div>
@@ -172,9 +171,10 @@
                     <!-- Total Metrics Logic -->
                     <div>
                         <h3 class="font-semibold text-primary-orange">Total Metrics</h3>
-                        <p class="text-sm text-gray-600 mt-1 mb-2">Metrics are calculated based on the sum of all tables and nodes across all configured universes to ensure consistency.</p>
+                        <p class="text-sm text-gray-600 mt-1 mb-2">Metrics for each universe are calculated independently and then summed for the final total.</p>
                         <div class="bg-gray-50 border-l-4 border-primary-orange p-4 rounded-md space-y-2">
-                             <code class="block w-full bg-transparent text-gray-800 text-sm font-mono">Total Metrics = (60 * Σ(Tables) + 9000) * Σ(Nodes)</code>
+                             <code class="block w-full bg-transparent text-gray-800 text-sm font-mono">Universe Metrics = (60 * Tables + 9000) * Nodes</code>
+                             <code class="block w-full bg-transparent text-gray-800 text-sm font-mono">Total Metrics = Σ(All Universe Metrics)</code>
                         </div>
                     </div>
 
@@ -258,23 +258,24 @@
         }
         
         /**
-         * Recalculates the total requirements based on the configured universes AND the live inputs.
+         * Calculates metrics for a single universe using the original script's formula.
+         */
+        function calculateUniverseMetrics(tables, nodes) {
+            if (isNaN(tables) || isNaN(nodes) || tables < 0 || nodes < 0) {
+                return BigInt(0);
+            }
+            // Using the formula: (60 * tables + 9000) * nodes
+            return (BigInt(60) * BigInt(tables) + BigInt(9000)) * BigInt(nodes);
+        }
+
+        /**
+         * Recalculates the total requirements based on the configured universes list.
          */
         function calculateTotalRequirements() {
-            // 1. Get totals from the configured universe list
-            let totalTables = universes.reduce((sum, u) => sum + u.tables, 0);
-            let totalNodes = universes.reduce((sum, u) => sum + u.nodes, 0);
-
-            // 2. Add numbers from the live input fields
-            const liveTables = parseInt(tablesInput.value, 10) || 0;
-            const liveNodes = parseInt(nodesInput.value, 10) || 0;
-            totalTables += liveTables;
-            totalNodes += liveNodes;
+            // 1. Sum metrics from all configured universes
+            const total_metrics = universes.reduce((sum, u) => sum + u.metrics, BigInt(0));
             
-            // 3. Apply the final, consistent formula
-            const total_metrics = (BigInt(60) * BigInt(totalTables) + BigInt(9000)) * BigInt(totalNodes);
-            
-            // 4. Calculate final resource requirements
+            // 2. Calculate final resource requirements
             const memory_per_metric = (total_metrics > 1000000) ? BigInt(10) : BigInt(30);
             const memory_kb = total_metrics * memory_per_metric;
             const memory_gb = Number(memory_kb) / 1024 / 1024;
@@ -284,12 +285,34 @@
 
             const cpu = Number(total_metrics) / 1000000;
 
-            // 5. Update the UI
+            // 3. Update the UI
             totalMetricsEl.textContent = formatLargeNumber(total_metrics);
             memoryGbEl.textContent = `${formatLargeNumber(memory_gb, 1e6)} GB`;
             diskGbEl.textContent = `${formatLargeNumber(disk_gb, 1e6)} GB`;
             cpuCoresEl.textContent = `${formatLargeNumber(cpu, 1e6)} Cores`;
         }
+        
+        /**
+         * Updates the live formula view for the current universe being typed.
+         */
+        function updateLiveFormulaView() {
+            const name = nameInput.value.trim();
+            const tables = parseInt(tablesInput.value, 10);
+            const nodes = parseInt(nodesInput.value, 10);
+
+            if (isNaN(tables) || isNaN(nodes) || tables <= 0 || nodes <= 0) {
+                liveFormulaViewEl.classList.add('hidden');
+                return;
+            }
+            
+            liveFormulaViewEl.classList.remove('hidden');
+            liveUniverseNameEl.textContent = name || "Live Preview";
+
+            const live_metrics = calculateUniverseMetrics(tables, nodes);
+            
+            liveMetricsFormulaEl.innerHTML = `(60 * ${tables.toLocaleString()} + 9000) * ${nodes.toLocaleString()} = <strong class="text-primary-orange">${formatLargeNumber(live_metrics)} metrics</strong>`;
+        }
+
 
         /**
          * Renders the list of configured universes in the DOM.
@@ -306,7 +329,7 @@
                         <div>
                             <p class="font-semibold text-gray-800">${universe.name}</p>
                             <p class="text-sm text-gray-600">
-                                Tables: ${universe.tables.toLocaleString()} | Nodes: ${universe.nodes.toLocaleString()}
+                                Tables: ${universe.tables.toLocaleString()} | Nodes: ${universe.nodes.toLocaleString()} → Metrics: <span class="font-medium">${formatLargeNumber(universe.metrics)}</span>
                             </p>
                         </div>
                         <button data-index="${index}" class="remove-btn text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full">
@@ -318,32 +341,6 @@
                     universesList.appendChild(universeEl);
                 });
             }
-        }
-        
-        /**
-         * Updates the live formula breakdown view for the current inputs.
-         */
-        function updateLiveBreakdown() {
-            const name = nameInput.value.trim();
-            const tables = parseInt(tablesInput.value, 10);
-            const nodes = parseInt(nodesInput.value, 10);
-
-            if (!name && isNaN(tables) && isNaN(nodes)) {
-                 liveFormulaViewEl.classList.add('hidden');
-                 return;
-            }
-
-            liveFormulaViewEl.classList.remove('hidden');
-            liveUniverseNameEl.textContent = name || "Live Breakdown";
-            
-            if (isNaN(tables) || isNaN(nodes) || tables <= 0 || nodes <= 0) {
-                liveMetricsFormulaEl.textContent = "Please enter valid table and node counts.";
-                return;
-            }
-
-            // This formula is for display purposes only, to show a per-universe calculation
-            const live_metrics = (BigInt(60) * BigInt(tables) + BigInt(9000)) * BigInt(nodes);
-            liveMetricsFormulaEl.innerHTML = `(60 * ${tables.toLocaleString()} + 9000) * ${nodes.toLocaleString()} = <strong class="text-primary-orange">${formatLargeNumber(live_metrics)} metrics</strong>`;
         }
 
         /**
@@ -360,16 +357,17 @@
                 return;
             }
 
-            universes.push({ name, tables, nodes });
+            const metrics = calculateUniverseMetrics(tables, nodes);
+            universes.push({ name, tables, nodes, metrics });
             
-            // Clear input fields
+            renderUniverses();
+            calculateTotalRequirements();
+            
+            // Clear input fields and hide the live preview
             nameInput.value = '';
             tablesInput.value = '';
             nodesInput.value = '';
-            
             liveFormulaViewEl.classList.add('hidden');
-            renderUniverses();
-            calculateTotalRequirements();
             
             nameInput.focus();
         }
@@ -392,15 +390,9 @@
         universesList.addEventListener('click', handleRemoveUniverse);
         
         // Listen to input fields for live calculation updates
-        nameInput.addEventListener('input', updateLiveBreakdown);
-        tablesInput.addEventListener('input', () => {
-            calculateTotalRequirements();
-            updateLiveBreakdown();
-        });
-        nodesInput.addEventListener('input', () => {
-            calculateTotalRequirements();
-            updateLiveBreakdown();
-        });
+        nameInput.addEventListener('input', updateLiveFormulaView);
+        tablesInput.addEventListener('input', updateLiveFormulaView);
+        nodesInput.addEventListener('input', updateLiveFormulaView);
         
         nameInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleAddUniverse());
         tablesInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleAddUniverse());
