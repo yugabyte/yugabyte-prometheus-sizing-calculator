@@ -118,21 +118,29 @@ fi
 echo ""
 echo "Processing Universes..."
 for entry in "${universes[@]}"; do
-  IFS=':' read -r name tables nodes <<< "$entry"
+  IFS=':' read -r name tables nodes extra <<< "$entry"
   if [[ -z "$name" || -z "$tables" || -z "$nodes" ]]; then
-    echo "Invalid universe input: $entry"
+    echo "Invalid universe input: '$entry' (expected format name:tables:nodes)"
+    usage
+  fi
+  if [[ -n "$extra" ]]; then
+    echo "Invalid universe input: '$entry' (too many ':'-separated fields; expected name:tables:nodes)"
+    usage
+  fi
+  if ! [[ "$tables" =~ ^[0-9]+$ && "$nodes" =~ ^[0-9]+$ ]]; then
+    echo "Invalid universe input: '$entry' (tables and nodes must be whole numbers)"
     usage
   fi
 
-  # Calculate metrics for this specific universe
-  universe_metrics=$(( (60 * tables + 9000) * nodes ))
+  # 10# forces base-10 so inputs with leading zeros are not parsed as octal
+  universe_metrics=$(( (60 * 10#$tables + 9000) * 10#$nodes ))
 
   # Add this universe's metrics to the grand total
   total_metrics=$(( total_metrics + universe_metrics ))
 
   # Add to the table and node counters
-  total_tables=$(( total_tables + tables ))
-  total_nodes=$(( total_nodes + nodes ))
+  total_tables=$(( total_tables + 10#$tables ))
+  total_nodes=$(( total_nodes + 10#$nodes ))
 
   bold_echo "  - Universe: $name - Tables: $tables, Nodes: $nodes → Metrics: $universe_metrics"
 done
